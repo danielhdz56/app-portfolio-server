@@ -41,40 +41,32 @@ router.post('/login', function (req, res) {
 
 /** Route to register and add new user to DB after hashing password */
 router.post('/register', (req, res) => {
-  if (req.body.email && req.body.password, req.body.username) {
-    const {username, email, password, avatarUrl} = req.body;
+  if (req.body.email && req.body.password) {
+    const { email, password } = req.body;
     const encryptedPassword = authService.encryptPassword(password);
     let payload, token, userResponse;
 
     mongoDb.getCollection(COLLECTION).findOne({ email }, (err, user) => {
       if (!user) {
-        mongoDb.getCollection(COLLECTION).findOne({ username }, (err, user) => {
-          if (!user) {
-            mongoDb.getCollection(COLLECTION).insertOne(
-              {
-                email,
-                password:
-                encryptedPassword,
-                username,
-                avatarUrl,
-                profileDetails: {
-                  firstName: '',
-                  lastName: '',
-                  lastOnline: new Date(),
-                }
-              }
-            )
-            .then((insertedUser) => {
-              userResponse = { _id: insertedUser.insertedId, email, username }
-              payload = { _id: insertedUser.insertedId };
-              token = jwt.sign(payload, secretToken.secret);
-              res.status(200).json({ user: userResponse, token: 'JWT ' + token })
-            })
-            .catch(() => res.status(401).json({ message: 'User was not added' }));
-          } else {
-            res.send({ message: 'A user with that username exists' });
+        mongoDb.getCollection(COLLECTION).insertOne(
+          {
+            email,
+            password:
+            encryptedPassword,
+            profileDetails: {
+              firstName: '',
+              lastName: '',
+              lastOnline: new Date(),
+            }
           }
+        )
+        .then((insertedUser) => {
+          userResponse = { _id: insertedUser.insertedId, email }
+          payload = { _id: insertedUser.insertedId };
+          token = jwt.sign(payload, secretToken.secret);
+          res.status(200).json({ user: userResponse, token: 'JWT ' + token })
         })
+        .catch(() => res.status(401).json({ message: 'User was not added' }));
       } else {
         res.send({ message: 'A user with that email exists' });
       }
